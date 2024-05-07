@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter/material.dart'; // Import dasar untuk membangun antarmuka pengguna (UI) menggunakan Flutter.
+import 'package:http/http.dart' as http; // Import untuk melakukan permintaan HTTP ke server.
+import 'dart:convert'; // Import untuk mengonversi data dari dan ke format JSON.
+import 'package:flutter_bloc/flutter_bloc.dart'; // Import untuk mengimplementasikan pola manajemen keadaan menggunakan BLoC (Business Logic Component) di Flutter.
 
 void main() {
   runApp(const MyApp());
@@ -32,8 +32,8 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
       ),
       home: BlocProvider(
-        create: (context) => CountryCubit(),
-        child: UniversityListPage(),
+        create: (context) => CountryCubit(), // Membuat instance dari CountryCubit untuk digunakan di seluruh aplikasi.
+        child: UniversityListPage(), // Menampilkan halaman UniversityListPage sebagai halaman utama.
       ),
     );
   }
@@ -49,7 +49,7 @@ class UniversityListPage extends StatelessWidget {
         title: BlocBuilder<CountryCubit, CountryState>(
           builder: (context, state) {
             return Text(
-                'Universities in ${state.selectedCountry?.name ?? 'Unknown'}');
+                'Universities in ${state.selectedCountry?.name ?? 'Unknown'}'); // Judul AppBar menampilkan nama negara terpilih.
           },
         ),
       ),
@@ -58,15 +58,15 @@ class UniversityListPage extends StatelessWidget {
           BlocBuilder<CountryCubit, CountryState>(
             builder: (context, state) {
               return DropdownButton<Country>(
-                value: state.selectedCountry,
+                value: state.selectedCountry, // Nilai dropdown sesuai dengan negara yang dipilih.
                 onChanged: (Country? newValue) {
-                  context.read<CountryCubit>().selectCountry(newValue!);
+                  context.read<CountryCubit>().selectCountry(newValue!); // Memperbarui negara yang dipilih.
                 },
                 items: state.countries
                     .map<DropdownMenuItem<Country>>((Country value) {
                   return DropdownMenuItem<Country>(
                     value: value,
-                    child: Text(value.name),
+                    child: Text(value.name), // Menampilkan nama negara dalam dropdown.
                   );
                 }).toList(),
               );
@@ -76,12 +76,12 @@ class UniversityListPage extends StatelessWidget {
             child: BlocBuilder<CountryCubit, CountryState>(
               builder: (context, state) {
                 return FutureBuilder<List<University>>(
-                  future: state.futureUniversities,
+                  future: state.futureUniversities, // Menggunakan futureUniversities dari state untuk menampilkan daftar universitas.
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
-                      return Center(child: CircularProgressIndicator());
+                      return Center(child: CircularProgressIndicator()); // Menampilkan indikator loading saat data sedang diambil.
                     } else if (snapshot.hasError) {
-                      return Center(child: Text('Error: ${snapshot.error}'));
+                      return Center(child: Text('Error: ${snapshot.error}')); // Menampilkan pesan error jika gagal mengambil data.
                     } else {
                       return ListView.builder(
                         itemCount: snapshot.data!.length,
@@ -89,7 +89,7 @@ class UniversityListPage extends StatelessWidget {
                           return ListTile(
                             title: Text(snapshot.data![index].name),
                             subtitle: Text(snapshot.data![index].website),
-                          );
+                          ); // Menampilkan daftar universitas dalam bentuk list tile.
                         },
                       );
                     }
@@ -111,9 +111,9 @@ class Country {
 }
 
 class CountryState {
-  final Country? selectedCountry;
-  final List<Country> countries;
-  final Future<List<University>> futureUniversities;
+  final Country? selectedCountry; // Negara yang dipilih.
+  final List<Country> countries; // Daftar negara.
+  final Future<List<University>> futureUniversities; // Future untuk daftar universitas di negara terpilih.
 
   CountryState({
     this.selectedCountry,
@@ -125,9 +125,9 @@ class CountryState {
 class CountryCubit extends Cubit<CountryState> {
   CountryCubit()
       : super(CountryState(
-          selectedCountry: null,
+          selectedCountry: null, // Awalnya tidak ada negara yang dipilih.
           countries: [
-            Country('Indonesia'),
+            Country('Indonesia'), // Daftar negara yang tersedia.
             Country('Singapura'),
             Country('Malaysia'),
             Country('Thailand'),
@@ -137,16 +137,16 @@ class CountryCubit extends Cubit<CountryState> {
             Country('Myanmar'),
             Country('Kamboja'),
             Country('Laos'),
-            // Add other ASEAN countries as needed
+            // Tambahkan negara ASEAN lainnya jika diperlukan
           ],
           futureUniversities:
-              fetchUniversities('Indonesia'), // Default to Indonesia
+              fetchUniversities('Indonesia'), // Default untuk Indonesia.
         ));
 
   void selectCountry(Country country) {
     emit(state.copyWith(
-      selectedCountry: country,
-      futureUniversities: fetchUniversities(country.name),
+      selectedCountry: country, // Memperbarui negara yang dipilih.
+      futureUniversities: fetchUniversities(country.name), // Mengambil daftar universitas untuk negara yang dipilih.
     ));
   }
 
@@ -158,9 +158,9 @@ class CountryCubit extends Cubit<CountryState> {
       List<dynamic> data = jsonDecode(response.body);
       List<University> universities =
           data.map((json) => University.fromJson(json)).toList();
-      return universities;
+      return universities; // Mengembalikan daftar universitas dari respons JSON.
     } else {
-      throw Exception('Failed to load universities');
+      throw Exception('Failed to load universities'); // Melemparkan pengecualian jika gagal mengambil data universitas.
     }
   }
 }
