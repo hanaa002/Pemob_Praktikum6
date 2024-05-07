@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart'; // Import modul dasar Flutter
 import 'dart:convert'; // Import modul dart:convert untuk mengelola JSON
-import 'package:http/http.dart' as http; // Import modul http dari paket http untuk melakukan permintaan HTTP
+import 'package:http/http.dart'
+    as http; // Import modul http dari paket http untuk melakukan permintaan HTTP
 import 'package:flutter_bloc/flutter_bloc.dart'; // Import modul flutter_bloc untuk manajemen state
+
 // Model untuk menyimpan data universitas
 class University {
   final String name; // Nama universitas
@@ -112,7 +114,9 @@ class _UniversitiesPageState extends State<UniversitiesPage> {
   @override
   void initState() {
     super.initState();
-    context.read<UniversityBloc>().add(FetchUniversitiesEvent(_selectedCountry));
+    context
+        .read<UniversityBloc>()
+        .add(FetchUniversitiesEvent(_selectedCountry));
   }
 
   @override
@@ -135,7 +139,8 @@ class _UniversitiesPageState extends State<UniversitiesPage> {
                       .add(FetchUniversitiesEvent(newValue));
                 });
               },
-              items: _aseanCountries.map<DropdownMenuItem<String>>((String value) {
+              items:
+                  _aseanCountries.map<DropdownMenuItem<String>>((String value) {
                 return DropdownMenuItem<String>(
                   value: value,
                   child: Text(value),
@@ -153,21 +158,34 @@ class _UniversitiesPageState extends State<UniversitiesPage> {
                   itemCount: universities.length,
                   itemBuilder: (context, index) {
                     final university = universities[index];
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8.0),
-                          child: Text(
-                            university.name,
-                            style: TextStyle(
-                              fontSize: 18.0,
-                              fontWeight: FontWeight.bold,
+                    return Center(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8.0),
+                            child: Text(
+                              university.name,
+                              style: TextStyle(
+                                fontSize: 18.0,
+                                fontWeight: FontWeight.w300, // Ganti tebal font
+                              ),
+                              textAlign: TextAlign.center, // Teks rata tengah
                             ),
                           ),
-                        ),
-                        Divider(), // Add divider instead of Card
-                      ],
+                          Text(
+                            university.webPages.join(', '), // Tampilkan link
+                            style: TextStyle(
+                              fontSize: 14.0,
+                              color: Colors.blue, // Warna biru untuk tautan
+                              decoration: TextDecoration
+                                  .underline, // Garis bawah untuk tautan
+                            ),
+                            textAlign: TextAlign.center, // Teks rata tengah
+                          ),
+                          Divider(), // Add divider instead of Card
+                        ],
+                      ),
                     );
                   },
                 ),
