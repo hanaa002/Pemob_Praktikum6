@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart'; // Paket dasar untuk membangun antarmuka pengguna (UI) menggunakan Flutter.
-import 'package:http/http.dart'
-    as http; // Paket untuk melakukan permintaan HTTP ke server.
+import 'package:http/http.dart' as http; // Paket untuk melakukan permintaan HTTP ke server.
 import 'dart:convert'; // Paket untuk mengonversi data dari dan ke format JSON.
 import 'package:provider/provider.dart'; // Paket untuk mengelola status aplikasi dan berbagi data antara widget.
 
