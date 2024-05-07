@@ -1,14 +1,7 @@
-// Import package Flutter Material untuk membangun UI
-import 'package:flutter/material.dart';
-
-// Import package http untuk melakukan HTTP requests
-import 'package:http/http.dart' as http;
-
-// Import package dart:convert untuk mengonversi JSON
-import 'dart:convert';
-
-// Import package provider untuk manajemen state
-import 'package:provider/provider.dart';
+import 'package:flutter/material.dart'; // Import package Flutter Material untuk membangun UI
+import 'package:http/http.dart' as http; // Import package http untuk melakukan HTTP requests
+import 'dart:convert'; // Import package dart:convert untuk mengonversi JSON
+import 'package:provider/provider.dart'; // Import package provider untuk manajemen state
 
 void main() {
   runApp(const MyApp());
