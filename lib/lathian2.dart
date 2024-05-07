@@ -1,18 +1,21 @@
-import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:provider/provider.dart';
+import 'package:flutter/material.dart'; // Paket dasar untuk membangun antarmuka pengguna (UI) menggunakan Flutter.
+import 'package:http/http.dart'
+    as http; // Paket untuk melakukan permintaan HTTP ke server.
+import 'dart:convert'; // Paket untuk mengonversi data dari dan ke format JSON.
+import 'package:provider/provider.dart'; // Paket untuk mengelola status aplikasi dan berbagi data antara widget.
 
 void main() {
   runApp(const MyApp());
 }
 
+// Kelas untuk merepresentasikan informasi universitas
 class University {
   final String name;
   final String website;
 
   University({required this.name, required this.website});
 
+  // Constructor factory untuk membuat objek University dari JSON
   factory University.fromJson(Map<String, dynamic> json) {
     return University(
       name: json['name'],
@@ -21,24 +24,27 @@ class University {
   }
 }
 
+// Kelas utama aplikasi
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (context) => CountryModel(),
+      create: (context) =>
+          CountryModel(), // Membuat instance dari CountryModel untuk di-share
       child: MaterialApp(
         title: 'University List',
         theme: ThemeData(
           primarySwatch: Colors.blue,
         ),
-        home: UniversityListPage(),
+        home: UniversityListPage(), // Halaman utama aplikasi
       ),
     );
   }
 }
 
+// Halaman untuk menampilkan daftar universitas
 class UniversityListPage extends StatefulWidget {
   const UniversityListPage({Key? key}) : super(key: key);
 
@@ -47,21 +53,24 @@ class UniversityListPage extends StatefulWidget {
 }
 
 class _UniversityListPageState extends State<UniversityListPage> {
-  late Future<List<University>> futureUniversities;
+  late Future<List<University>>
+      futureUniversities; // Future untuk menampung daftar universitas
 
   @override
   void initState() {
     super.initState();
     final countryModel = Provider.of<CountryModel>(context, listen: false);
-    futureUniversities =
-        fetchUniversities(countryModel.selectedCountry?.name ?? 'Indonesia');
+    futureUniversities = fetchUniversities(countryModel.selectedCountry?.name ??
+        'Indonesia'); // Mengambil daftar universitas untuk negara terpilih atau Indonesia secara default
     countryModel.addListener(() {
-      futureUniversities =
-          fetchUniversities(countryModel.selectedCountry?.name ?? 'Indonesia');
+      futureUniversities = fetchUniversities(countryModel
+              .selectedCountry?.name ??
+          'Indonesia'); // Mengambil ulang daftar universitas saat negara terpilih berubah
       setState(() {});
     });
   }
 
+  // Mengambil daftar universitas dari API
   Future<List<University>> fetchUniversities(String countryName) async {
     final response = await http.get(Uri.parse(
         'http://universities.hipolabs.com/search?country=$countryName'));
@@ -83,15 +92,15 @@ class _UniversityListPageState extends State<UniversityListPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-            'Universities in ${countryModel.selectedCountry?.name ?? 'Unknown'}'),
+            'Universities in ${countryModel.selectedCountry?.name ?? 'Unknown'}'), // Judul AppBar
       ),
       body: Column(
         children: [
-          // DropdownButton to select country
+          // DropdownButton untuk memilih negara
           DropdownButton<Country>(
             value: countryModel.selectedCountry,
             onChanged: (Country? newValue) {
-              countryModel.selectCountry(newValue!);
+              countryModel.selectCountry(newValue!); // Memilih negara baru
             },
             items: countryModel.countries
                 .map<DropdownMenuItem<Country>>((Country value) {
@@ -101,20 +110,20 @@ class _UniversityListPageState extends State<UniversityListPage> {
               );
             }).toList(),
           ),
-          // Display list of universities
+          // Menampilkan daftar universitas
           Expanded(
             child: Center(
               child: FutureBuilder<List<University>>(
                 future: futureUniversities,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    // Show loading indicator while data is being fetched
+                    // Menampilkan indikator loading saat data sedang diambil
                     return CircularProgressIndicator();
                   } else if (snapshot.hasError) {
-                    // Show error message if failed to fetch data
+                    // Menampilkan pesan error jika gagal mengambil data
                     return Text('Error: ${snapshot.error}');
                   } else {
-                    // Display list of universities
+                    // Menampilkan daftar universitas
                     return ListView.builder(
                       itemCount: snapshot.data!.length,
                       itemBuilder: (context, index) {
@@ -124,7 +133,7 @@ class _UniversityListPageState extends State<UniversityListPage> {
                           subtitle: Text(university.website),
                           trailing: Icon(Icons.arrow_forward),
                           onTap: () {
-                            // Action to perform when university item is tapped
+                            // Aksi yang dilakukan saat item universitas ditekan
                           },
                         );
                       },
@@ -140,7 +149,7 @@ class _UniversityListPageState extends State<UniversityListPage> {
   }
 }
 
-// Model to store country data and selected country
+// Model untuk menyimpan data negara dan negara yang dipilih
 class Country {
   final String name;
 
@@ -148,8 +157,8 @@ class Country {
 }
 
 class CountryModel extends ChangeNotifier {
-  Country? selectedCountry;
-  // List of ASEAN countries
+  Country? selectedCountry; // Negara yang dipilih
+  // List negara ASEAN
   List<Country> countries = [
     Country('Indonesia'),
     Country('Singapore'),
@@ -161,11 +170,11 @@ class CountryModel extends ChangeNotifier {
     Country('Myanmar'),
     Country('Cambodia'),
     Country('Laos'),
-    // Add other ASEAN countries as needed
+    // Tambahkan negara ASEAN lainnya jika diperlukan
   ];
 
   void selectCountry(Country country) {
-    // Update selected country and notify listeners
+    // Memperbarui negara yang dipilih dan memberi tahu pendengar
     selectedCountry = country;
     notifyListeners();
   }
