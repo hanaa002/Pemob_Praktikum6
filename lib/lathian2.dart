@@ -1,180 +1,181 @@
-import 'package:flutter/material.dart'; // Paket dasar untuk membangun antarmuka pengguna (UI) menggunakan Flutter.
-import 'package:http/http.dart' as http; // Paket untuk melakukan permintaan HTTP ke server.
-import 'dart:convert'; // Paket untuk mengonversi data dari dan ke format JSON.
-import 'package:provider/provider.dart'; // Paket untuk mengelola status aplikasi dan berbagi data antara widget.
-
-void main() {
-  runApp(const MyApp());
-}
-
-// Kelas untuk merepresentasikan informasi universitas
+import 'package:flutter/material.dart'; // Import modul dasar Flutter
+import 'dart:convert'; // Import modul dart:convert untuk mengelola JSON
+import 'package:http/http.dart' as http; // Import modul http dari paket http untuk melakukan permintaan HTTP
+import 'package:flutter_bloc/flutter_bloc.dart'; // Import modul flutter_bloc untuk manajemen state
+// Model untuk menyimpan data universitas
 class University {
-  final String name;
-  final String website;
+  final String name; // Nama universitas
+  final String? stateProvince; // Provinsi universitas (opsional)
+  final List<String> domains; // Domain universitas
+  final List<String> webPages; // Halaman web universitas
+  final String alphaTwoCode; // Kode alfa dua digit untuk negara universitas
+  final String country; // Nama negara universitas
 
-  University({required this.name, required this.website});
+  University({
+    required this.name,
+    this.stateProvince,
+    required this.domains,
+    required this.webPages,
+    required this.alphaTwoCode,
+    required this.country,
+  });
 
-  // Constructor factory untuk membuat objek University dari JSON
   factory University.fromJson(Map<String, dynamic> json) {
     return University(
       name: json['name'],
-      website: json['web_pages'][0],
+      stateProvince: json['state-province'],
+      domains: List<String>.from(json['domains']),
+      webPages: List<String>.from(json['web_pages']),
+      alphaTwoCode: json['alpha_two_code'],
+      country: json['country'],
     );
   }
 }
 
-// Kelas utama aplikasi
-class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+// Events
+abstract class UniversityEvent {}
 
-  @override
-  Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) =>
-          CountryModel(), // Membuat instance dari CountryModel untuk di-share
-      child: MaterialApp(
-        title: 'University List',
-        theme: ThemeData(
-          primarySwatch: Colors.blue,
-        ),
-        home: UniversityListPage(), // Halaman utama aplikasi
-      ),
-    );
-  }
+class FetchUniversitiesEvent extends UniversityEvent {
+  final String country;
+  FetchUniversitiesEvent(this.country);
 }
 
-// Halaman untuk menampilkan daftar universitas
-class UniversityListPage extends StatefulWidget {
-  const UniversityListPage({Key? key}) : super(key: key);
-
-  @override
-  State<UniversityListPage> createState() => _UniversityListPageState();
-}
-
-class _UniversityListPageState extends State<UniversityListPage> {
-  late Future<List<University>>
-      futureUniversities; // Future untuk menampung daftar universitas
-
-  @override
-  void initState() {
-    super.initState();
-    final countryModel = Provider.of<CountryModel>(context, listen: false);
-    futureUniversities = fetchUniversities(countryModel.selectedCountry?.name ??
-        'Indonesia'); // Mengambil daftar universitas untuk negara terpilih atau Indonesia secara default
-    countryModel.addListener(() {
-      futureUniversities = fetchUniversities(countryModel
-              .selectedCountry?.name ??
-          'Indonesia'); // Mengambil ulang daftar universitas saat negara terpilih berubah
-      setState(() {});
-    });
+// Bloc
+class UniversityBloc extends Bloc<UniversityEvent, List<University>> {
+  UniversityBloc() : super([]) {
+    on<FetchUniversitiesEvent>(_fetchUniversities);
   }
 
-  // Mengambil daftar universitas dari API
-  Future<List<University>> fetchUniversities(String countryName) async {
-    final response = await http.get(Uri.parse(
-        'http://universities.hipolabs.com/search?country=$countryName'));
+  Future<void> _fetchUniversities(
+    FetchUniversitiesEvent event,
+    Emitter<List<University>> emit,
+  ) async {
+    try {
+      final universities = await _fetchUniversitiesFromApi(event.country);
+      emit(universities);
+    } catch (e) {
+      print('Error: $e');
+      emit([]);
+    }
+  }
+
+  Future<List<University>> _fetchUniversitiesFromApi(String country) async {
+    final response = await http.get(
+        Uri.parse('http://universities.hipolabs.com/search?country=$country'));
 
     if (response.statusCode == 200) {
-      List<dynamic> data = jsonDecode(response.body);
-      List<University> universities =
-          data.map((json) => University.fromJson(json)).toList();
-      return universities;
+      final List<dynamic> data = jsonDecode(response.body);
+      return data.map((json) => University.fromJson(json)).toList();
     } else {
       throw Exception('Failed to load universities');
     }
   }
+}
 
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    var countryModel = Provider.of<CountryModel>(context);
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-            'Universities in ${countryModel.selectedCountry?.name ?? 'Unknown'}'), // Judul AppBar
-      ),
-      body: Column(
-        children: [
-          // DropdownButton untuk memilih negara
-          DropdownButton<Country>(
-            value: countryModel.selectedCountry,
-            onChanged: (Country? newValue) {
-              countryModel.selectCountry(newValue!); // Memilih negara baru
-            },
-            items: countryModel.countries
-                .map<DropdownMenuItem<Country>>((Country value) {
-              return DropdownMenuItem<Country>(
-                value: value,
-                child: Text(value.name),
-              );
-            }).toList(),
-          ),
-          // Menampilkan daftar universitas
-          Expanded(
-            child: Center(
-              child: FutureBuilder<List<University>>(
-                future: futureUniversities,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    // Menampilkan indikator loading saat data sedang diambil
-                    return CircularProgressIndicator();
-                  } else if (snapshot.hasError) {
-                    // Menampilkan pesan error jika gagal mengambil data
-                    return Text('Error: ${snapshot.error}');
-                  } else {
-                    // Menampilkan daftar universitas
-                    return ListView.builder(
-                      itemCount: snapshot.data!.length,
-                      itemBuilder: (context, index) {
-                        final university = snapshot.data![index];
-                        return ListTile(
-                          title: Text(university.name),
-                          subtitle: Text(university.website),
-                          trailing: Icon(Icons.arrow_forward),
-                          onTap: () {
-                            // Aksi yang dilakukan saat item universitas ditekan
-                          },
-                        );
-                      },
-                    );
-                  }
-                },
-              ),
-            ),
-          ),
-        ],
+    return MaterialApp(
+      home: BlocProvider(
+        create: (context) => UniversityBloc(),
+        child: UniversitiesPage(),
       ),
     );
   }
 }
 
-// Model untuk menyimpan data negara dan negara yang dipilih
-class Country {
-  final String name;
-
-  Country(this.name);
+class UniversitiesPage extends StatefulWidget {
+  @override
+  _UniversitiesPageState createState() => _UniversitiesPageState();
 }
 
-class CountryModel extends ChangeNotifier {
-  Country? selectedCountry; // Negara yang dipilih
-  // List negara ASEAN
-  List<Country> countries = [
-    Country('Indonesia'),
-    Country('Singapore'),
-    Country('Malaysia'),
-    Country('Thailand'),
-    Country('Vietnam'),
-    Country('Philippines'),
-    Country('Brunei'),
-    Country('Myanmar'),
-    Country('Cambodia'),
-    Country('Laos'),
-    // Tambahkan negara ASEAN lainnya jika diperlukan
+class _UniversitiesPageState extends State<UniversitiesPage> {
+  final List<String> _aseanCountries = [
+    'Indonesia',
+    'Singapore',
+    'Malaysia',
+    'Thailand',
+    'Philippines',
+    'Vietnam',
+    'Myanmar',
+    'Cambodia',
+    'Brunei',
+    'Laos',
   ];
 
-  void selectCountry(Country country) {
-    // Memperbarui negara yang dipilih dan memberi tahu pendengar
-    selectedCountry = country;
-    notifyListeners();
+  String _selectedCountry = 'Indonesia';
+
+  @override
+  void initState() {
+    super.initState();
+    context.read<UniversityBloc>().add(FetchUniversitiesEvent(_selectedCountry));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('ASEAN Universities'),
+      ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: DropdownButton<String>(
+              value: _selectedCountry,
+              onChanged: (String? newValue) {
+                setState(() {
+                  _selectedCountry = newValue!;
+                  context
+                      .read<UniversityBloc>()
+                      .add(FetchUniversitiesEvent(newValue));
+                });
+              },
+              items: _aseanCountries.map<DropdownMenuItem<String>>((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value),
+                );
+              }).toList(),
+            ),
+          ),
+          BlocBuilder<UniversityBloc, List<University>>(
+            builder: (context, universities) {
+              if (universities.isEmpty) {
+                return CircularProgressIndicator();
+              }
+              return Expanded(
+                child: ListView.builder(
+                  itemCount: universities.length,
+                  itemBuilder: (context, index) {
+                    final university = universities[index];
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          child: Text(
+                            university.name,
+                            style: TextStyle(
+                              fontSize: 18.0,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        Divider(), // Add divider instead of Card
+                      ],
+                    );
+                  },
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
   }
 }
